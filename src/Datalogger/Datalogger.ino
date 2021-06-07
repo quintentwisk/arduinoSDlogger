@@ -2,19 +2,31 @@
 #include <SD.h>
 
 #define FILE_NAME_BASE   "CBLOG"
-#define MAX_LOGS         999
+#define FILE_EXT         ".log"
+#define MAX_LOGS         10
+#define MAX_FILE_SIZE    1000     /* 1KB */
 
-int logCount = 1;
+int logCount = 001;
+String currentFileName = "";
 
 String genFileName() {
   char buffer[256];
   sprintf(buffer, "%03d", logCount);
   
   String strLogCount = String(buffer);
+  String newFileName = FILE_NAME_BASE + strLogCount + FILE_EXT;
   
   logCount++;
   
-  return FILE_NAME_BASE + strLogCount;
+  if (logCount > MAX_LOGS) {
+    logCount = 1;
+  }
+
+  if(SD.exists(newFileName)) {
+    SD.remove(newFileName);
+  }
+
+  return newFileName;
 }
 
 void setup() {
@@ -30,11 +42,10 @@ void setup() {
     while (1);
   }
   Serial.println("card initialized.");
+  currentFileName = genFileName();
 }
 
 void loop() {
-  delay(1000);
- 
   String dataString = "";
 
   for (int analogPin = 0; analogPin < 3; analogPin++) {
@@ -45,13 +56,15 @@ void loop() {
     }
   }
 
-  File dataFile = SD.open(genFileName(), FILE_WRITE);
+  File dataFile = SD.open(currentFileName, FILE_WRITE);
 
   // if the file is available, write to it:
   if (dataFile) {
     dataFile.println(dataString);
+    if (dataFile.size() >= MAX_FILE_SIZE) {
+      currentFileName = genFileName();
+    }
     dataFile.close();
-    Serial.println(dataString);
   }
   else {
     Serial.println("error opening datalog.txt");
