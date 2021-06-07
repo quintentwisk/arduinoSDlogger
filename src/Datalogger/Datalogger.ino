@@ -1,6 +1,22 @@
 #include <SPI.h>
 #include <SD.h>
 
+#define FILE_NAME_BASE   "CBLOG"
+#define MAX_LOGS         999
+
+int logCount = 1;
+
+String genFileName() {
+  char buffer[256];
+  sprintf(buffer, "%03d", logCount);
+  
+  String strLogCount = String(buffer);
+  
+  logCount++;
+  
+  return FILE_NAME_BASE + strLogCount;
+}
+
 void setup() {
   Serial.begin(9600);
   while (!Serial) {
@@ -18,6 +34,7 @@ void setup() {
 
 void loop() {
   delay(1000);
+ 
   String dataString = "";
 
   for (int analogPin = 0; analogPin < 3; analogPin++) {
@@ -28,7 +45,7 @@ void loop() {
     }
   }
 
-  File dataFile = SD.open("datalog.txt", FILE_WRITE);
+  File dataFile = SD.open(genFileName(), FILE_WRITE);
 
   // if the file is available, write to it:
   if (dataFile) {
